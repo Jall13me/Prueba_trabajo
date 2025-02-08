@@ -1,94 +1,79 @@
 package edu.alenasoft.gildedrose;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GildedRose {
+    private static final Map<String, ItemUpdater> updaters = new HashMap<>();
 
-    public static List<Item> items = new ArrayList<>();
-
-    public static void main(String[] args) {
-        System.out.println("OMGHAI!");
-
-        items.add(new Item("+5 Dexterity Vest", 10, 20));
-        items.add(new Item("Aged Brie", 2, 0));
-        items.add(new Item("Elixir of the Mongoose", 5, 7));
-        items.add(new Item("Sulfuras, Hand of Ragnaros", 0, 80));
-        items.add(new Item("Backstage passes to a TAFKAL80ETC concert", 15, 20));
-        items.add(new Item("Conjured Mana Cake", 3, 6));
-
-        updateQuality();
-
-        System.out.println(items);
+    static {
+        updaters.put("Aged Brie", new AgedBrieUpdater());
+        updaters.put("Backstage passes to a TAFKAL80ETC concert", new BackstagePassUpdater());
+        updaters.put("Sulfuras, Hand of Ragnaros", new LegendaryItemUpdater());
+        updaters.put("Conjured Mana Cake", new ConjuredItemUpdater());
     }
 
-    public static void updateQuality() {
-        for (Item item : items) {
-            updateItemQuality(item);
-        }
+    public static void updateQuality(Item item) {
+        updaters.getOrDefault(item.getName(), new NormalItemUpdater()).update(item);
     }
+}
 
-    private static void updateItemQuality(Item item) {
-        if (item.getName().equals("Sulfuras, Hand of Ragnaros")) {
-            return; // Sulfuras no cambia
-        }
+interface ItemUpdater {
+    void update(Item item);
+}
 
+class NormalItemUpdater implements ItemUpdater {
+    @Override
+    public void update(Item item) {
+        int decrement = (item.getSellIn() <= 0) ? 2 : 1;
+        item.setQuality(Math.max(0, item.getQuality() - decrement));
         item.setSellIn(item.getSellIn() - 1);
-
-        switch (item.getName()) {
-            case "Aged Brie":
-                updateAgedBrie(item);
-                break;
-            case "Backstage passes to a TAFKAL80ETC concert":
-                updateBackstagePasses(item);
-                break;
-            default:
-                if (item.getName().startsWith("Conjured")) {
-                    updateConjuredItem(item);
-                } else {
-                    updateNormalItem(item);
-                }
-                break;
-        }
     }
+}
 
-    private static void updateAgedBrie(Item item) {
+class AgedBrieUpdater implements ItemUpdater {
+    @Override
+    public void update(Item item) {
         if (item.getQuality() < 50) {
             item.setQuality(item.getQuality() + 1);
         }
-    }
-
-    private static void updateBackstagePasses(Item item) {
-        if (item.getSellIn() < 0) {
-            item.setQuality(0);
-        } else if (item.getSellIn() <= 5) {
-            item.setQuality(item.getQuality() + 3);
-        } else if (item.getSellIn() <= 10) {
-            item.setQuality(item.getQuality() + 2);
-        } else {
+        item.setSellIn(item.getSellIn() - 1);
+        if (item.getSellIn() < 0 && item.getQuality() < 50) {
             item.setQuality(item.getQuality() + 1);
         }
+    }
+}
 
+class BackstagePassUpdater implements ItemUpdater {
+    @Override
+    public void update(Item item) {
+        if (item.getSellIn() > 10) {
+            item.setQuality(item.getQuality() + 1);
+        } else if (item.getSellIn() > 5) {
+            item.setQuality(item.getQuality() + 2);
+        } else if (item.getSellIn() > 0) {
+            item.setQuality(item.getQuality() + 3);
+        } else {
+            item.setQuality(0);
+        }
         if (item.getQuality() > 50) {
             item.setQuality(50);
         }
+        item.setSellIn(item.getSellIn() - 1);
     }
+}
 
-    private static void updateConjuredItem(Item item) {
-        int degradeAmount = item.getSellIn() < 0 ? 4 : 2;
-        item.setQuality(item.getQuality() - degradeAmount);
-
-        if (item.getQuality() < 0) {
-            item.setQuality(0);
-        }
+class ConjuredItemUpdater implements ItemUpdater {
+    @Override
+    public void update(Item item) {
+        int decrement = (item.getSellIn() <= 0) ? 4 : 2;
+        item.setQuality(Math.max(0, item.getQuality() - decrement));
+        item.setSellIn(item.getSellIn() - 1);
     }
+}
 
-    private static void updateNormalItem(Item item) {
-        int degradeAmount = item.getSellIn() < 0 ? 2 : 1;
-        item.setQuality(item.getQuality() - degradeAmount);
-
-        if (item.getQuality() < 0) {
-            item.setQuality(0);
-        }
+class LegendaryItemUpdater implements ItemUpdater {
+    @Override
+    public void update(Item item) {
     }
 }
