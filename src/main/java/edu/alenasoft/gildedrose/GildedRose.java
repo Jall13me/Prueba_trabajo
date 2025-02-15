@@ -30,7 +30,7 @@ public class GildedRose {
 
     private static void updateItemQuality(Item item) {
         if (item.getName().equals("Sulfuras, Hand of Ragnaros")) {
-            return; // Sulfuras no cambia
+            return; 
         }
 
         item.setSellIn(item.getSellIn() - 1);
